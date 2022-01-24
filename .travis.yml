@@ -1,0 +1,23 @@
+services:
+  - docker
+
+before_install:
+  - docker build -t jeanecarlos/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true jeanecarlos/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t jeanecarlos/multi-client ./client
+  - docker build -t jeanecarlos/multi-nginx ./nginx
+  - docker build -t jeanecarlos/multi-server ./server
+  - docker build -t jeanecarlos/multi-worker ./worker
+
+  # Log into docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push jeanecarlos/multi-client
+  - docker push jeanecarlos/multi-nginx
+  - docker push jeanecarlos/multi-server
+  - docker push jeanecarlos/multi-worker
